@@ -2,108 +2,40 @@ name: Terraform Deploy
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
 
-# GitHub OIDC permissions
 permissions:
   id-token: write
   contents: read
 
 jobs:
-
-  # ==================================================
-  # PLAN JOB
-  # ==================================================
-  plan:
-    name: Terraform Plan
+  terraform:
     runs-on: ubuntu-latest
 
     steps:
 
-      # 1. Checkout GitHub repository
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Install Terraform
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      # 3. Authenticate to AWS using OIDC
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::590184067731:role/oidc-role
           aws-region: us-east-1
 
-      # 4. Verify AWS authentication
-      - name: Check AWS Identity
-        run: aws sts get-caller-identity
+      - name: Verify AWS
+        run: |
+          aws sts get-caller-identity
 
-      # 5. Terraform Init
       - name: Terraform Init
         run: terraform init
 
-      # 6. Terraform Validate
       - name: Terraform Validate
         run: terraform validate
 
-      # 7. Terraform Plan
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan
 
-      # 8. Upload Terraform Plan
-      - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: tfplan
-          path: tfplan
-
-
-  # ==================================================
-  # APPLY JOB
-  # ==================================================
-  apply:
-    name: Terraform Apply
-    runs-on: ubuntu-latest
-
-    # Apply runs only after Plan succeeds
-    needs: plan
-
-    # Manual approval through GitHub Environment
-    environment: production
-
-    steps:
-
-      # 1. Checkout GitHub repository
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # 2. Install Terraform
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      # 3. Authenticate to AWS using OIDC
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::590184067731:role/oidc-role
-          aws-region: us-east-1
-
-      # 4. Verify AWS authentication
-      - name: Check AWS Identity
-        run: aws sts get-caller-identity
-
-      # 5. Terraform Init
-      - name: Terraform Init
-        run: terraform init
-
-      # 6. Download Plan Artifact
-      - name: Download Terraform Plan
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan
-
-      # 7. Terraform Apply
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve
