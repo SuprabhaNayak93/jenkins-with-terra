@@ -28,14 +28,26 @@ jobs:
         run: |
           aws sts get-caller-identity
 
+       # 4. Install Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # 5. Check Terraform version
+      - name: Terraform Version
+        run: terraform version
+
+      # 6. Terraform Init
       - name: Terraform Init
         run: terraform init
 
+      # 7. Terraform Validate
       - name: Terraform Validate
         run: terraform validate
 
+      # 8. Terraform Plan
       - name: Terraform Plan
         run: terraform plan
 
+      # 9. Terraform Apply
       - name: Terraform Apply
         run: terraform apply -auto-approve
