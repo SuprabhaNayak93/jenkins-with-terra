@@ -23,7 +23,7 @@ run: terraform validate
 run: terraform plan -out=tfplan
 - name: Terraform Apply
 run: terraform apply -auto-approve tfplan
-condition based after plan approval only apply
+# condition based after plan approval only apply
 name: Terraform Deploy
 on:
 push:
