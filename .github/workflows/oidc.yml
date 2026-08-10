@@ -1,6 +1,17 @@
-name: CI-CD AWS Deployment
+name: Terraform Deploy
 
 on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What do you want to do?"
+        required: true
+        type: choice
+        options:
+          - apply
+          - destroy
+          - none
+
   push:
     branches:
       - main
@@ -10,35 +21,60 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
+  terraform:
     runs-on: ubuntu-latest
 
     steps:
 
-      # 1. Checkout source code
+      # 1. Checkout Code
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Configure AWS using GitHub OIDC
+      # 2. Configure AWS using OIDC
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::590184067731:role/oidc-role
           aws-region: us-east-1
 
-      # 3. Verify AWS authentication
-      - name: Verify AWS Identity
+      # 3. Verify AWS
+      - name: Verify AWS
         run: |
           aws sts get-caller-identity
 
-      # 4. CI - Example build
-      - name: Build
-        run: |
-          echo "Build started"
-          echo "Build completed"
+      # 4. Install Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-      # 5. CD - Example deployment
-      - name: Deploy to AWS
+      # 5. Check Terraform Version
+      - name: Terraform Version
+        run: terraform version
+
+      # 6. Terraform Init
+      - name: Terraform Init
+        run: terraform init
+
+      # 7. Terraform Validate
+      - name: Terraform Validate
+        run: terraform validate
+
+      # 8. Terraform Plan
+      - name: Terraform Plan
+        run: terraform plan
+
+      # 9. Terraform Apply
+      - name: Terraform Apply
+        if: github.event_name == 'workflow_dispatch' && inputs.action == 'apply'
+        run: terraform apply -auto-approve
+
+      # 10. Terraform Destroy
+      - name: Terraform Destroy
+        if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
+        run: terraform destroy -auto-approve
+
+      # 11. Nothing
+      - name: No Action Selected
+        if: github.event_name == 'workflow_dispatch' && inputs.action == 'none'
         run: |
-          echo "Deployment started"
-          # Add your AWS deployment commands here
+          echo "Terraform plan completed."
+          echo "No apply or destroy was selected."
